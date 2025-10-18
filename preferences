@@ -1,0 +1,48 @@
+from pydantic import BaseModel, fitz # Fitz is used for reading & interpreting PDFs
+from fastapi import FastAPI, APIRouter, File, UploadFile
+from openai import OpenAI
+#from elevenlabs import generate, play, set_api_key
+
+from typing import Optional
+import os
+#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
+# SETUP
+app = FastAPI()
+router = APIRouter()
+
+client = OpenAI()
+#set_api_key("API_KEY")
+
+class UserInput(BaseModel):
+    text: Optional[str] = None
+
+def extract_pdf(pdf_path: str) -> str:
+    text = ""
+    with fitz.open(pdf_path) as doc:
+        for page in doc:
+            text += page.getText("text")
+        return text
+
+@router.post("/nlp/preferences")
+async def extract_preferences(user_input: dict):
+    text = user_input["text"]
+
+    # This is where we ask Open AI to spit out info as JSON from the student
+    system_prompt = """
+    You are an academic advisor assistant that takes in the students input about
+    course planning preference, maybe from student input text or the pdfs they want to import about course history.
+    Always respond in JSON with the following fields:
+    {
+        "major": string or null;
+        "minor": string or null;
+        "courses_taken" : string or null;
+        "target_graduation": string or null;
+        "preferences" : {
+            "wantsSummerClasses": boolean,
+            "wantsSpecificCourses": boolean
+        }
+    }
+    """
+    return {"message": system_prompt}
+
+app.include_router(router)
