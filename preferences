@@ -5,7 +5,7 @@ from openai import OpenAI
 
 from typing import Optional
 import os
-#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
+
 # SETUP
 app = FastAPI()
 router = APIRouter()
