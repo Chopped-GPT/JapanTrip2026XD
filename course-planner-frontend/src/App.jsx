@@ -1,36 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import SideBar from './components/SideBar.jsx';
+import Builder from './pages/Builder.jsx';
+import Schedule from './pages/Schedule.jsx';
+import Courses from './pages/Courses.jsx';
+import './css/App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function Layout() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          Hello fellow chopped
-          Chopped Factor is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <SideBar />
+      {/* This spot changes when the route (URL) changes */}
+      <Outlet />
+    </div>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* All routes below share the same Layout (sidebar + content area) */}
+        <Route element={<Layout />}>
+          {/* Default route: going to "/" sends you to /builder */}
+          <Route index element={<Navigate to="/builder" replace />} />
+
+          {/* Your three main pages (each gets its own URL) */}
+          <Route path="builder" element={<Builder />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="courses" element={<Courses />} />
+
+          {/* Catch-all: anything else shows a simple 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function NotFound() {
+  return (
+    <section className="main">
+      <div className="chat" style={{ paddingTop: 24 }}>
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>Page not found</h2>
+          <p>Use the sidebar to navigate.</p>
+        </div>
+      </div>
+      <div className="input-bar"><div className="muted">404</div></div>
+    </section>
+  );
+}
