@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import SideBar from './components/SideBar.jsx';
 import Builder from './pages/Builder.jsx';
 import Schedule from './pages/Schedule.jsx';
@@ -9,8 +9,7 @@ function Layout() {
   return (
     <div className="app">
       <SideBar />
-      {/* This spot changes when the route (URL) changes */}
-      <Outlet />
+      <div className="main"><Outlet /></div>
     </div>
   );
 }

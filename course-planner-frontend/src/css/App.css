@@ -1,42 +1,35 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Make the app fill the screen */
+html, body, #root { height: 100%; margin: 0; }
+
+/* Two columns: left = sidebar, right = main */
+.app {
+  display: grid;
+  grid-template-columns: 260px 1fr; /* 260px sidebar, the rest main */
+  height: 100%;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Sidebar styling */
+.sidebar {
+  /* this class matches <aside className="sidebar"> in your SideBar.jsx */
+  padding: 16px;
+  border-right: 1px solid #222;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Main area (the one that wraps <Outlet />) */
+.main {
+  padding: 16px;
+  min-width: 0; /* prevents overflow when content is wide */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Optional: nav buttons + active state */
+.side-btn {
+  display: block;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
 }
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+.side-btn.active {
+  outline: 2px solid #dc2626; /* shows which route is active */
 }

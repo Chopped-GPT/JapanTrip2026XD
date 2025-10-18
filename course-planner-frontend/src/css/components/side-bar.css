@@ -1,0 +1,25 @@
+/* component-specific styles */
+.sidebar {
+  background: #ba0303;
+  border-right: 1px solid #ba0303;
+  padding: 16px;
+}
+.sidebar__sectionTitle {
+  font-size: 12px; color: #b5b5b5; text-transform: uppercase; letter-spacing: .06em;
+  margin: 8px 0 6px;
+}
+.side-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; text-decoration: none;
+  color: #fff; background: #1b1b1b; border: 1px solid #2a2a2a;
+}
+.side-btn:hover { background: #222; }
+.side-btn.active { outline: 2px solid #dc2626; }
+.sidebar__divider { height: 1px; background: #2a2a2a; margin: 12px 0; }
+
+/* responsive collapse */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 72px 1fr; }
+  .side-btn { justify-content: center; padding: 10px; }
+  .side-btn span.label { display: none; } /* hide labels, show icons only */
+}
