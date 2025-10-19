@@ -1,14 +1,37 @@
 export const API_BASE =
   import.meta?.env?.VITE_API_BASE || "http://localhost:8000";
 
+/**
+ * Generic response handler:
+ * - throws on non-2xx
+ * - returns null on 204 or empty body
+ * - parses JSON only when body is non-empty and content-type says json
+ */
 async function handle(res) {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const msg = text || `${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
+
+  // No Content
+  if (res.status === 204) return null;
+
   const ct = res.headers.get("content-type") || "";
-  return ct.includes("application/json") ? res.json() : null;
+  const text = await res.text().catch(() => "");
+
+  if (!text) return null; // empty body, nothing to parse
+  if (ct.includes("application/json")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      // If server mislabeled or returned invalid JSON, surface a readable error
+      throw new Error("Invalid JSON response from server.");
+    }
+  }
+
+  // Not JSON: return raw text or null (most of our endpoints return JSON anyway)
+  return text;
 }
 
 function qs(params = {}) {

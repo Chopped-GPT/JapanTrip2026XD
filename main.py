@@ -1,85 +1,50 @@
-from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException
+# main.py
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from uuid import uuid4
-import fitz  # PyMuPDF
 import os
 
-# 🚨 NEW IMPORTS for LLM and Environment Setup
-from openai import OpenAI, APIError
-from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
-from normalize import normalize_student_input  # 🚨 Import the function
-
-# ------------ LLM SETUP ----------------------------------------------
-
-load_dotenv()
-
-# Initialize the modern OpenAI client with error handling
+# Optional PDF text extraction
 try:
-    client = OpenAI()
-except Exception as e:
-    print(f"FATAL: Failed to initialize OpenAI client. Error: {e}")
-    client = None
+    import fitz  # PyMuPDF
+except Exception:
+    fitz = None
 
-
-# ------------ Models (No changes, reused from preferences2.py) ------
-
+# ---------- Models ----------
 class Prefs(BaseModel):
     days: List[str] = []
-    timeOfDay: str = "Any"  # Any | Morning | Afternoon | Evening
-    modality: str = "Any"  # Any | In-person | Online | Hybrid
-
+    timeOfDay: str = "Any"   # Morning | Afternoon | Evening | Any
+    modality: str = "Any"    # In-person | Online | Hybrid | Any
 
 class CourseBase(BaseModel):
     code: str
     title: str
     credits: int = Field(gt=0)
-    term: str  # e.g., "Fall 2025"
+    term: str
     status: str = "planned"  # planned | completed
     grade: Optional[str] = None
     prefs: Prefs = Prefs()
 
-
-class CourseCreate(CourseBase):
-    pass
-
-
-class CourseUpdate(BaseModel):
-    code: Optional[str] = None
-    title: Optional[str] = None
-    credits: Optional[int] = Field(default=None, gt=0)
-    term: Optional[str] = None
-    status: Optional[str] = None
-    grade: Optional[str] = None
-    prefs: Optional[Prefs] = None
-
-
 class Course(CourseBase):
     id: str
 
-
-class BuildScheduleRequest(BaseModel):
+class BuildScheduleIn(BaseModel):
     courses: List[Course]
-    pdfIds: List[str] = []
+    pdfIds: Optional[List[str]] = []
     chatSessionId: Optional[str] = None
 
-
-class NLPInput(BaseModel):
-    text: Optional[str] = None
-
-
-# ------------ App setup ----------------------------------------------
-
-app = FastAPI(title="Course Planner API", version="0.1.0")
+# ---------- App ----------
+app = FastAPI(title="Course Planner API")
 router = APIRouter(prefix="/api")
 
 origins = [
-    "http://localhost:5173",  # Vite
-    "http://localhost:3000",  # CRA / Next dev
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -89,156 +54,108 @@ app.add_middleware(
 )
 
 # In-memory "DB"
-memory_db: Dict[str, Any] = {
-    "courses": {},  # id -> Course
-    "pdf_store": {},  # id -> {"filename": ..., "text": ...}
-}
+DB: Dict[str, Any] = {"courses": {}}
 
-
-# ------------ Helpers (No changes) -----------------------------------
-
-def extract_pdf_text(file_path: str) -> str:
-    text = ""
-    with fitz.open(file_path) as doc:
-        for page in doc:
-            text += page.get_text("text")
-    return text
-
-
-# ------------ Courses CRUD (No changes) ------------------------------
-
+# ---------- Courses CRUD ----------
 @router.get("/courses", response_model=List[Course])
 def list_courses():
-    return list(memory_db["courses"].values())
-
+    return list(DB["courses"].values())
 
 @router.post("/courses", response_model=Course, status_code=201)
-def create_course(payload: CourseCreate):
-    new_id = str(uuid4())
-    course = Course(id=new_id, **payload.dict())
-    memory_db["courses"][new_id] = course
-    return course
-
+def create_course(body: CourseBase):
+    cid = str(uuid4())
+    saved = Course(id=cid, **body.dict())
+    DB["courses"][cid] = saved
+    return saved
 
 @router.put("/courses/{course_id}", response_model=Course)
-def update_course(course_id: str, patch: CourseUpdate):
-    if course_id not in memory_db["courses"]:
+def update_course(course_id: str, body: CourseBase):
+    if course_id not in DB["courses"]:
         raise HTTPException(status_code=404, detail="Course not found")
-    current: Course = memory_db["courses"][course_id]
-    data = current.dict()
-    patch_dict = patch.dict(exclude_unset=True)
-    data.update(patch_dict)
-    updated = Course(**data)
-    memory_db["courses"][course_id] = updated
-    return updated
-
+    cur: Course = DB["courses"][course_id]
+    merged = cur.copy(update=body.dict())
+    DB["courses"][course_id] = merged
+    return merged
 
 @router.delete("/courses/{course_id}", status_code=204)
 def delete_course(course_id: str):
-    if course_id not in memory_db["courses"]:
-        raise HTTPException(status_code=404, detail="Course not found")
-    del memory_db["courses"][course_id]
-    return
+    DB["courses"].pop(course_id, None)
 
-
-# ------------ File uploads (PDF) (No changes) ------------------------
-
-UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
+# ---------- PDF upload ----------
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 @router.post("/uploads/pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
-
     path = os.path.join(UPLOAD_DIR, file.filename)
     with open(path, "wb") as f:
         f.write(await file.read())
 
-    text = extract_pdf_text(path)
-    pdf_id = str(uuid4())
-    memory_db["pdf_store"][pdf_id] = {"filename": file.filename, "text": text}
-    return {"id": pdf_id, "filename": file.filename, "chars": len(text)}
+    chars = 0
+    if fitz is not None:
+        try:
+            text = ""
+            with fitz.open(path) as doc:
+                for page in doc:
+                    text += page.get_text("text")
+            chars = len(text)
+        except Exception:
+            chars = 0
+    return {"id": str(uuid4()), "filename": file.filename, "chars": chars}
 
-
-# ------------ NLP preferences (NOW USING normalize.py) -----------------
+# ---------- NLP preferences (stub OK) ----------
+class PrefsRequest(BaseModel):
+    text: Optional[str] = None
 
 @router.post("/nlp/preferences")
-def extract_preferences(user_input: NLPInput):
-    """
-    Uses normalize.py to standardize raw text input before any LLM processing.
-    """
-    normalized_data = normalize_student_input(user_input.text)
-
-    # 🚨 This is where you would call the LLM to extract major/graduation date from text
-
+def extract_preferences(body: PrefsRequest):
+    # You can call OpenAI here; for now just return a normalized stub
     return {
-        "message": "Data normalized successfully (LLM extraction step skipped for now)",
-        "input": user_input.text,
-        "normalized_schema": normalized_data,
+        "major": None,
+        "minor": None,
+        "courses_taken": body.text or None,
+        "target_graduation": None,
+        "preferences": {
+            "wantsSummerClasses": False,
+            "wantsSpecificCourses": False,
+        },
     }
 
-
-# ------------ Build schedule (LLM INTEGRATION) ---------------------------------
-
+# ---------- Build schedule ----------
 @router.post("/schedule/build")
-def build_schedule(req: BuildScheduleRequest):
+def build_schedule(payload: BuildScheduleIn):
     """
-    Calls the LLM/solver with full course list and preferences.
+    Very simple builder:
+    - Puts each course on its preferred days (or Mon if none)
+    - Bucketed by timeOfDay (Morning/Afternoon/Evening/Any)
     """
-    if client is None:
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "OpenAI client failed to initialize at startup."}
-        )
+    week: Dict[str, List[Dict[str, Any]]] = {d: [] for d in ["Mon","Tue","Wed","Thu","Fri"]}
+    for c in payload.courses:
+        days = c.prefs.days or ["Mon"]
+        time = c.prefs.timeOfDay if c.prefs.timeOfDay in ["Morning","Afternoon","Evening"] else "Any"
+        for d in days:
+            week.setdefault(d, [])
+            week[d].append({"time": time, "code": c.code, "title": c.title})
 
-    # 1. Extract necessary data from the new, complex model
-    taken_classes = [c.code for c in req.courses if c.status == "completed"]
-    available_classes = [c.code for c in req.courses if c.status == "planned"]
-    all_courses_data = [c.dict() for c in req.courses]
+    # Transform to the shape Schedule.jsx expects:
+    buckets = {}
+    for d in ["Mon","Tue","Wed","Thu","Fri"]:
+        buckets[d] = {"Morning": [], "Afternoon": [], "Evening": [], "Any": []}
+        for it in week.get(d, []):
+            slot = it.get("time") if it.get("time") in ["Morning","Afternoon","Evening"] else "Any"
+            buckets[d][slot].append({"code": it.get("code",""), "title": it.get("title","")})
 
-    # 2. Build the detailed prompt for the LLM
-    prompt = f"""
-    You are an AI academic scheduling assistant. 
-    The student's full list of courses and current status is: {all_courses_data}
-    Specifically, classes already taken are: {taken_classes}.
-    Classes that still need to be scheduled are: {available_classes}.
+    return {
+        "week": buckets,
+        "note": "Auto-built from course preferences.",
+        "pdfIds": payload.pdfIds or [],
+        "chatSessionId": payload.chatSessionId,
+    }
 
-    The student's preferences are embedded within the 'prefs' field of the course objects (days, timeOfDay, modality).
-    Your task is to organize all 'planned' courses into a valid, plausible semester schedule.
-
-    Respond in JSON format. The JSON should contain a key 'planned_schedule' which is a list 
-    of dictionary objects, one for each course, and a key 'reasoning' explaining the choices.
-    Each course object in 'planned_schedule' must include the course 'code' and a new 
-    'suggested_term' field (e.g., 'Fall 2025', 'Spring 2026').
-    """
-
-    # 3. Call the API with error handling
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            timeout=15.0
-        )
-
-        ai_output = response.choices[0].message.content
-
-        return {"ai_response": ai_output}
-
-    except APIError as e:
-        error_message = e.response.json().get('error', {}).get('message', 'Unknown API Error')
-        print(f"OpenAI API Error ({e.status_code}): {error_message}")
-        return JSONResponse(
-            status_code=e.status_code if e.status_code is not None else 500,
-            content={"detail": f"OpenAI API Error: {error_message}"}
-        )
-    except Exception as e:
-        print(f"FATAL SERVER CRASH during API call: {e}")
-        return JSONResponse(
-            status_code=500,
-            content={"detail": f"Internal Server Crash: {e}"}
-        )
-
+@router.get("/health")
+def health():
+    return {"ok": True}
 
 app.include_router(router)
