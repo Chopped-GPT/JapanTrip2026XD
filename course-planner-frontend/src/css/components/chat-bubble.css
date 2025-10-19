@@ -1,0 +1,33 @@
+/* modern spacing + readable width */
+.msg-row{
+  display: flex;
+  margin: 14px 0;
+}
+.msg-row.from-you{ justify-content: flex-end; }
+.msg-row.from-bot{ justify-content: flex-start; }
+
+.msg-bubble{
+  max-width: 70ch;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--ink-640);
+  white-space: pre-wrap;
+  box-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+
+/* bot bubble = deep charcoal */
+.msg-row.from-bot .msg-bubble{
+  background: var(--ink-700);
+  color: var(--text);
+}
+/* you bubble = UH red */
+.msg-row.from-you .msg-bubble{
+  background: var(--uh-red);
+  color: #fff;
+  border-color: var(--uh-red-dark);
+  border-radius: 18px;
+}
+
+/* tiny offsets so bubbles never kiss container edges */
+.msg-row.from-bot .msg-bubble{ margin-left: 6px; }
+.msg-row.from-you .msg-bubble{ margin-right: 6px; }

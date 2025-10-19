@@ -1,35 +1,63 @@
-/* Make the app fill the screen */
-html, body, #root { height: 100%; margin: 0; }
+/* =========================
+   Global shell (UH theme)
+   ========================= */
 
-/* Two columns: left = sidebar, right = main */
-.app {
-  display: grid;
-  grid-template-columns: 260px 1fr; /* 260px sidebar, the rest main */
+/* Theme tokens (shared by sidebar + pages) */
+:root{
+  --uh-red: #c8102e;
+  --uh-red-dark: #a10d24;
+
+  --ink-900: #0b0b0b;  /* app background */
+  --ink-850: #101113;
+  --ink-800: #15171a;
+  --ink-700: #1e2126;
+  --ink-600: #2a2f36;
+
+  --text: #ffffff;
+}
+
+/* Full-height app & zero gutters */
+html, body, #root {
   height: 100%;
+  margin: 0;
+  background: var(--ink-900);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
 }
 
-/* Sidebar styling */
-.sidebar {
-  /* this class matches <aside className="sidebar"> in your SideBar.jsx */
-  padding: 16px;
-  border-right: 1px solid #222;
+/* App shell: sidebar (fixed width) | main (flex) */
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 260px 1fr; /* left rail width | content */
 }
 
-/* Main area (the one that wraps <Outlet />) */
+/* Keep right pane from overflowing horizontally.
+   (Each page—like Builder—handles its own internal layout.) */
 .main {
-  padding: 16px;
-  min-width: 0; /* prevents overflow when content is wide */
+  min-width: 0;
 }
 
-/* Optional: nav buttons + active state */
-.side-btn {
-  display: block;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  text-decoration: none;
+/* Optional: consistent link + focus styles */
+a { color: inherit; text-decoration: none; }
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--uh-red) 65%, white);
+  outline-offset: 2px;
+}
+
+/* Small, subtle scrollbar app-wide (WebKit) */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-600);
+  border-radius: 6px;
+}
+
+/* Make form controls inherit font/colors */
+button, input, textarea, select {
+  font: inherit;
   color: inherit;
-  border-radius: 10px;
 }
-.side-btn.active {
-  outline: 2px solid #dc2626; /* shows which route is active */
-}
+
+/* If your sidebar component uses className="SideBar", the detailed
+   visuals come from src/css/components/side-bar.css.
+   We keep App.css focused on layout and globals only. */

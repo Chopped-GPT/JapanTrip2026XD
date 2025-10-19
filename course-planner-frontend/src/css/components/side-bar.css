@@ -1,25 +1,85 @@
-/* component-specific styles */
-.sidebar {
-  background: #ba0303;
-  border-right: 1px solid #ba0303;
-  padding: 16px;
+/* ===== University of Houston theme ===== */
+:root {
+  --uh-red: #c8102e;         /* UH primary red (PMS 186) */
+  --uh-red-dark: #a10d24;    /* darker red for hover/active depth */
+  --uh-black: #0b0b0b;
+  --uh-gray-800: #1e1e1e;
+  --uh-gray-700: #2a2a2a;
+  --uh-white: #ffffff;
 }
-.sidebar__sectionTitle {
-  font-size: 12px; color: #b5b5b5; text-transform: uppercase; letter-spacing: .06em;
-  margin: 8px 0 6px;
-}
-.side-btn {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px; text-decoration: none;
-  color: #fff; background: #1b1b1b; border: 1px solid #2a2a2a;
-}
-.side-btn:hover { background: #222; }
-.side-btn.active { outline: 2px solid #dc2626; }
-.sidebar__divider { height: 1px; background: #2a2a2a; margin: 12px 0; }
 
-/* responsive collapse */
+/* ===== Sidebar container ===== */
+.SideBar {
+  height: 100vh;              /* full column */
+  position: sticky;           /* stays in view while scrolling */
+  top: 0;
+  background: var(--uh-black);
+  color: var(--uh-white);
+  border-right: 1px solid var(--uh-gray-700);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Layout for the nav group */
+.SideBar nav {
+  display: grid;
+  gap: 10px;
+}
+
+/* ===== Buttons (NavLink) ===== */
+.side-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--uh-white);
+  background: var(--uh-gray-800);
+  border: 1px solid var(--uh-gray-700);
+  border-radius: 12px;
+  padding: 10px 12px;
+  line-height: 1.2;
+  transition: background 140ms ease, transform 80ms ease, border-color 140ms ease;
+  position: relative;
+}
+
+/* Left accent bar (subtle until hover/active) */
+.side-btn::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background 140ms ease;
+}
+
+/* Hover state */
+.side-btn:hover {
+  background: #232323;
+  border-color: var(--uh-gray-700);
+}
+
+/* Active route (NavLink adds .active) */
+.side-btn.active {
+  background: linear-gradient(180deg, var(--uh-red) 0%, var(--uh-red-dark) 100%);
+  border-color: var(--uh-red);
+  color: var(--uh-white);
+  transform: translateX(1px);
+}
+
+.side-btn.active::before {
+  background: var(--uh-white);
+}
+
+/* Small screens: slightly narrower feel */
 @media (max-width: 900px) {
-  .app { grid-template-columns: 72px 1fr; }
-  .side-btn { justify-content: center; padding: 10px; }
-  .side-btn span.label { display: none; } /* hide labels, show icons only */
+  .SideBar {
+    padding: 12px;
+  }
+  .side-btn {
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
 }
