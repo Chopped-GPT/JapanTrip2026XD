@@ -1,0 +1,103 @@
+/* =========================
+   Schedule page (UH theme)
+   ========================= */
+
+/* Reuses tokens defined in your global CSS:
+   --uh-red, --uh-red-dark, --ink-850, --ink-820, --ink-760, --ink-640, --text
+*/
+
+.schedule-page {
+  --panel: var(--ink-850);
+  --panel-2: var(--ink-820);
+  --border: var(--ink-640);
+  --muted: #b9c2cf;
+}
+
+/* Header */
+.schedule-page header h1 { letter-spacing: 0.2px; }
+
+/* Legend text */
+.schedule-page .legend {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* --------------- Day columns grid --------------- */
+.schedule-page .week-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .schedule-page .week-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .schedule-page .week-grid { grid-template-columns: 1fr; }
+}
+
+/* --------------- Day column card --------------- */
+.schedule-page .day-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.schedule-page .day-card:hover {
+  border-color: color-mix(in srgb, var(--uh-red) 38%, var(--border));
+  background: var(--panel-2);
+}
+
+/* Day title */
+.schedule-page .day-title {
+  font-weight: 600;
+  margin: 2px 0 8px;
+}
+
+/* --------------- Buckets --------------- */
+.schedule-page .bucket { margin-bottom: 12px; }
+.schedule-page .bucket-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* Empty bucket box */
+.schedule-page .bucket-empty {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #a9b2c0;
+  background: var(--panel-2);
+}
+
+/* --------------- Course item pill --------------- */
+.schedule-page .course-list { display: grid; gap: 8px; }
+
+.schedule-page .course-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--ink-820);
+  box-shadow: 0 1px 0 rgba(0,0,0,.35);
+  transition: border-color 140ms ease, transform 60ms ease, background 140ms ease;
+}
+.schedule-page .course-item:hover {
+  border-color: color-mix(in srgb, var(--uh-red) 30%, var(--border));
+  background: var(--ink-760);
+}
+.schedule-page .course-code { font-weight: 600; }
+.schedule-page .course-title { opacity: 0.85; font-size: 13px; }
+
+/* --------------- “No data yet” message --------------- */
+.schedule-page .empty-state {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 16px;
+  color: var(--muted);
+}

@@ -1,45 +1,64 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE =
+  import.meta?.env?.VITE_API_BASE || "http://localhost:8000";
 
-async function request(path, { method = 'GET', body, headers, signal } = {}) {
-  const url = path.startsWith('http') ? path : `${BASE}${path}`;
-  const isForm = body instanceof FormData;
-
-  const res = await fetch(url, {
-    method,
-    headers: {
-      Accept: 'application/json',
-      ...(isForm ? {} : body ? { 'Content-Type': 'application/json' } : {}),
-      ...(headers || {}),
-    },
-    body: isForm ? body : body ? JSON.stringify(body) : undefined,
-    signal,
-  });
-
+async function handle(res) {
   if (!res.ok) {
-    let msg = res.statusText;
-    try { const err = await res.json(); msg = err.detail || err.message || msg; } catch {}
-    throw new Error(`HTTP ${res.status}: ${msg}`);
+    const text = await res.text().catch(() => "");
+    const msg = text || `${res.status} ${res.statusText}`;
+    throw new Error(msg);
   }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : null;
+}
 
-  const ct = res.headers.get('content-type') || '';
-  return ct.includes('application/json') ? res.json() : null;
+function qs(params = {}) {
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    Array.isArray(v) ? v.forEach((x) => sp.append(k, x)) : sp.set(k, v);
+  });
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}
+
+export function withQuery(path, params) {
+  return `${path}${qs(params)}`;
 }
 
 export const http = {
-  get: (p, opts) => request(p, { ...opts, method: 'GET' }),
-  post: (p, data, opts) => request(p, { ...opts, method: 'POST', body: data }),
-  put: (p, data, opts) => request(p, { ...opts, method: 'PUT', body: data }),
-  del: (p, opts) => request(p, { ...opts, method: 'DELETE' }),
-  upload(p, file, extra = {}, opts) {
+  get: async (path) => handle(await fetch(`${API_BASE}${path}`)),
+
+  post: async (path, body) =>
+    handle(
+      await fetch(`${API_BASE}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body ?? {}),
+      })
+    ),
+
+  put: async (path, body) =>
+    handle(
+      await fetch(`${API_BASE}${path}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body ?? {}),
+      })
+    ),
+
+  del: async (path) =>
+    handle(await fetch(`${API_BASE}${path}`, { method: "DELETE" })),
+
+  // file: File or Blob, meta: { any extra fields }
+  upload: async (path, file, meta = {}) => {
     const form = new FormData();
-    form.append('file', file);
-    for (const [k, v] of Object.entries(extra)) form.append(k, v);
-    return request(p, { ...opts, method: 'POST', body: form });
+    form.append("file", file);
+    Object.entries(meta).forEach(([k, v]) => form.append(k, v));
+    return handle(
+      await fetch(`${API_BASE}${path}`, {
+        method: "POST",
+        body: form,
+      })
+    );
   },
 };
-
-// ✅ make sure this is exported
-export function withQuery(path, params = {}) {
-  const q = new URLSearchParams(params).toString();
-  return q ? `${path}?${q}` : path;
-}

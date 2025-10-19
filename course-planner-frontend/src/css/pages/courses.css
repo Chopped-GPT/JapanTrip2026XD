@@ -1,0 +1,161 @@
+/* =========================
+   Courses page (UH theme)
+   ========================= */
+
+/* Uses the same tokens defined globally: --uh-red, --ink-* etc. */
+/* (See App.css / builder.css for token values.) */
+
+.courses-page {
+  --panel: var(--ink-850);
+  --panel-2: var(--ink-820);
+  --border: var(--ink-640);
+  --field: var(--ink-760);
+  --muted: #b9c2cf;
+}
+
+/* Header */
+.courses-page header h1 {
+  letter-spacing: 0.2px;
+}
+.courses-page header .badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--ink-820);
+  color: var(--muted);
+}
+
+/* Form card */
+.courses-page form {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* Labels + helper text */
+.courses-page label > span {
+  color: var(--muted);
+}
+
+/* ---------- Inputs ---------- */
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--field);
+  color: var(--text);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--uh-red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--uh-red) 32%, transparent);
+}
+.input[disabled],
+.input:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* Errors */
+.hint-error {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--ink-820);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 60ms ease, filter 120ms ease, background 120ms ease;
+}
+.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.btn-primary {
+  border-color: var(--uh-red);
+  background: linear-gradient(180deg, var(--uh-red) 0%, var(--uh-red-dark) 100%);
+  color: #fff;
+}
+.btn-accent {
+  border-color: #0f766e;          /* teal-ish accent just for contrast */
+  background: linear-gradient(180deg, #0ea5a5 0%, #0f766e 100%);
+  color: #001416;
+}
+.btn-danger {
+  border-color: #b91c1c;
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+}
+
+/* ---------- Chips (preferred days) ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--ink-820);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 60ms ease;
+}
+.chip:hover { background: var(--ink-700); }
+.chip:active { transform: translateY(1px); }
+.chip--active {
+  border-color: var(--uh-red);
+  background: color-mix(in srgb, var(--uh-red) 22%, var(--ink-820));
+  box-shadow: inset 0 0 0 1px var(--uh-red);
+}
+
+/* ---------- Section: list header ---------- */
+.courses-page .list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 8px;
+}
+.courses-page .list-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* ---------- Error banner ---------- */
+.courses-page .error-banner {
+  margin: 12px 0;
+  border: 1px solid #7f1d1d;
+  background: #2b1111;
+  color: #ffd6d6;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+/* ---------- “No courses” box ---------- */
+.courses-page .empty {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  color: var(--muted);
+  background: var(--panel-2);
+}
+
+/* Responsive tightening */
+@media (max-width: 900px) {
+  .courses-page form { padding: 12px; border-radius: 14px; }
+  .chip { height: 30px; padding: 0 10px; }
+}

@@ -1,4 +1,4 @@
-export * from './client';
-export * from './courses';
-export * from './chat';
-export * from './files';
+export { API_BASE, http, withQuery } from "./client";
+export { CoursesAPI } from "./courses";
+export { FilesAPI } from "./files";
+export { ChatAPI } from "./chat";

@@ -1,0 +1,50 @@
+/* =========================
+   Course list + rows
+   ========================= */
+
+.course-list {
+  display: grid;
+  gap: 10px;
+}
+
+/* Each row */
+.course-row {
+  border: 1px solid var(--ink-640);
+  background: var(--ink-850);
+  border-radius: 14px;
+  padding: 12px;
+  transition: border-color 160ms ease, background 160ms ease, transform 60ms ease;
+}
+.course-row:hover {
+  border-color: color-mix(in srgb, var(--uh-red) 40%, var(--ink-640));
+  background: var(--ink-820);
+}
+.course-row .meta {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+/* Action buttons on the right */
+.course-row .actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Inline edit form */
+.course-row .grid {
+  display: grid;
+  gap: 8px;
+}
+.course-row .grid-cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.course-row .grid-cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .course-row .grid-cols-3,
+  .course-row .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
