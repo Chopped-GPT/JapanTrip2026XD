@@ -1,6 +1,7 @@
+// src/lib/api/courses.js
 import { http, withQuery } from "./client";
 
-// Matches FastAPI routes: /api/courses
+// Same surface as your original, but served by our mock router.
 export const CoursesAPI = {
   list: (params) => http.get(withQuery("/api/courses", params)),
   create: (payload) => http.post("/api/courses", payload),

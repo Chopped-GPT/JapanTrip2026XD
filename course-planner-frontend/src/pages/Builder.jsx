@@ -1,6 +1,7 @@
+// src/pages/Builder.jsx
 import { useEffect, useRef, useState } from 'react';
 import ChatBubble from '../components/ChatBubble.jsx';
-import { FilesAPI } from '../lib/api'; // uses your API layer
+import { FilesAPI } from '../lib/api'; // still used for the PDF button (mock-safe)
 import '../css/pages/builder.css';
 
 const makeMsg = (from, text) => ({
@@ -9,6 +10,29 @@ const makeMsg = (from, text) => ({
   text,
   ts: Date.now(),
 });
+
+// --- demo schedule helper ----------------------------------------------------
+function makeDemoSchedule() {
+  const swapped = localStorage.getItem('swap3340') === '1'; // set when user says "switch 3340"
+  const automata = swapped
+    ? { code: 'COSC 3320', title: 'Algorithms & Data Structures II', time: 'Afternoon' }
+    : { code: 'COSC 3340', title: 'Intro to Automata & Computability', time: 'Afternoon' };
+
+  const week = {
+    Mon: [{ code: 'COSC 3360', title: 'Database Systems', time: 'Morning' }],
+    Tue: [{ code: 'COSC 4351', title: 'Fund. Of Software Engineering', time: 'Morning' }],
+    Wed: [automata],
+    Thu: [],
+    Fri: [],
+  };
+
+  return {
+    note: 'Mock schedule generated locally (frontend-only demo).',
+    week,
+    chatSessionId: null,
+    pdfIds: [],
+  };
+}
 
 export default function Builder() {
   // --- state ---
@@ -31,6 +55,7 @@ export default function Builder() {
   }, [messages]);
 
   useEffect(() => {
+    // If CourseList stashed a selection in localStorage, acknowledge it
     try {
       const raw = localStorage.getItem('selectedCourses');
       if (!raw) return;
@@ -40,24 +65,76 @@ export default function Builder() {
         const list = picked.map((c) => c.code || c.name || c.id).join(', ');
         addBot(`I see you selected: ${list}`);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // --- helpers ---
-  function addYou(t) { setMessages((m) => [...m, makeMsg('you', t)]); }
-  function addBot(t) { setMessages((m) => [...m, makeMsg('bot', t)]); }
+  function addYou(t) {
+    setMessages((m) => [...m, makeMsg('you', t)]);
+  }
+  function addBot(t) {
+    setMessages((m) => [...m, makeMsg('bot', t)]);
+  }
   const canSend = text.trim().length > 0 && !sending && !uploading;
 
-  // mock reply for now
+  // --- scripted mock reply (matches your demo script) ------------------------
   async function fakeReply(userText) {
     setSending(true);
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 250));
+
+    const t = (userText || '').toLowerCase();
+
+    // 1) User states completed courses (1437 & 2436)
+    if (t.includes('1437') && t.includes('2436')) {
+      addBot('Hello Tina!');
+      addBot('These are the courses you can take for next semester:');
+      addBot(
+        [
+          'COSC 3340 - Intro to Automata & Computability',
+          'COSC 3360 - Database Systems',
+          'COSC 4351 - Fund. Of Software Engineering',
+        ].join('\n')
+      );
+      setSending(false);
+      return;
+    }
+
+    // 2) Ask to switch 3340
+    if (t.includes('switch') && t.includes('3340')) {
+      localStorage.setItem('swap3340', '1'); // remember for schedule generation
+      addBot('Yes! You can instead take COSC 3320 - Algorithms & Data Structures!');
+      addBot('You meet the prerequisites and it is offered next semester.');
+      setSending(false);
+      return;
+    }
+
+    // 3) Ask to generate a schedule
+    if (
+      t.includes('make me a schedule') ||
+      t.includes('build my schedule') ||
+      (t.includes('schedule') && (t.includes('make') || t.includes('build')))
+    ) {
+      const sched = makeDemoSchedule();
+      try {
+        localStorage.setItem('lastSchedule', JSON.stringify(sched));
+      } catch {}
+      addBot('On it! Check the “Schedule” for your new schedule.');
+      addBot('Tell me if you want to make any changes');
+      setSending(false);
+      return;
+    }
+
+    // Fallback
     addBot('Got it! (mock reply)');
     setSending(false);
   }
 
   // --- text events ---
-  function onChange(e) { setText(e.target.value); }
+  function onChange(e) {
+    setText(e.target.value);
+  }
   function onKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -70,10 +147,9 @@ export default function Builder() {
     addYou(value);
     setText('');
     await fakeReply(value);
-    // later: const { reply } = await ChatAPI.send(value); addBot(reply);
   }
 
-  // --- file upload events ---
+  // --- file upload events (kept for UI; works with mock FilesAPI) ------------
   function openFilePicker() {
     if (sending || uploading) return;
     fileInputRef.current?.click();
@@ -81,8 +157,7 @@ export default function Builder() {
 
   async function onPickFile(e) {
     const file = e.target.files?.[0];
-    // allow selecting the same file again later
-    e.target.value = '';
+    e.target.value = ''; // allow re-selecting same file later
 
     if (!file) return;
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
@@ -103,7 +178,7 @@ export default function Builder() {
     ]);
 
     try {
-      await FilesAPI.uploadPdf(file); // FastAPI should accept field "file"
+      await FilesAPI.uploadPdf(file);
       setMessages((m) =>
         m.map((msg) =>
           msg.id === uploadingId ? { ...msg, text: `✔️ Uploaded: ${file.name}` } : msg
@@ -122,7 +197,7 @@ export default function Builder() {
     }
   }
 
-  // --- render ---
+  // --- render ----------------------------------------------------------------
   return (
     <section className="main builder">
       <div className="chat" ref={listRef}>
@@ -136,7 +211,13 @@ export default function Builder() {
         </div>
       </div>
 
-      <form className="input-bar" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+      <form
+        className="input-bar"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
+      >
         {/* hidden file input */}
         <input
           ref={fileInputRef}
