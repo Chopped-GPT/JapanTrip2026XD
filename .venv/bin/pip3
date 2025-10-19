@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/alexmayer/Documents/Computer Science/Projects/course-planner/.venv/bin/python3" "$0" "$@"
+'''exec' "/Users/alexmayer/Documents/Computer Science/Projects/course-planner/.venv/bin/python" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
